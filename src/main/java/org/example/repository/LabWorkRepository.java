@@ -3,6 +3,7 @@ package org.example.repository;
 import org.example.model.LabWork;
 
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  *
@@ -21,7 +22,7 @@ public interface LabWorkRepository {
 
     boolean save();
 
-    LinkedHashSet<LabWork> getCollection();
+    Set<LabWork> getCollection();
 
     boolean updateById(LabWork labWork, int id, int personId);
 

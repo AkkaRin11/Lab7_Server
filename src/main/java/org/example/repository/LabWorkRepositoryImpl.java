@@ -1,9 +1,12 @@
 package org.example.repository;
 
 import org.example.model.LabWork;
+import org.w3c.dom.ls.LSOutput;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  *
@@ -14,7 +17,7 @@ import java.util.LinkedHashSet;
 public class LabWorkRepositoryImpl implements LabWorkRepository {
     private static LabWorkRepositoryImpl instance;
 
-    private final LinkedHashSet<LabWork> labWorks;
+    private final Set<LabWork> labWorks;
 
     private final DB db;
 
@@ -29,7 +32,7 @@ public class LabWorkRepositoryImpl implements LabWorkRepository {
     private LabWorkRepositoryImpl() {
         db = DB.getInstance();
         try {
-            labWorks = (LinkedHashSet<LabWork>) db.getCollection();
+            labWorks = Collections.synchronizedSet((LinkedHashSet<LabWork>) db.getCollection());
         } catch (SQLException e) {
             System.out.println("коллекция не может импортироваться");
             throw new RuntimeException(e);
@@ -42,6 +45,7 @@ public class LabWorkRepositoryImpl implements LabWorkRepository {
         try {
             id = db.addLabWork(labWork, personId);
         } catch (SQLException e) {
+            System.out.println(e);
             return false;
         }
         labWork.setId(id);
@@ -62,7 +66,11 @@ public class LabWorkRepositoryImpl implements LabWorkRepository {
 
     @Override
     public boolean removeById(int id, int personId) {
-//        db.removeById(id);
+        try {
+            db.removeById(id, personId);
+        } catch (SQLException e) {
+            return false;
+        }
 
         LabWork labWork = null;
 
@@ -83,14 +91,18 @@ public class LabWorkRepositoryImpl implements LabWorkRepository {
 
     @Override
     public boolean removeGreater(LabWork labWork, int personId) {
-//        db.removeGreater(labWork.getMinimalPoint());
+        try {
+            db.removeGreater(labWork.getMinimalPoint(), personId);
+        } catch (SQLException e) {
+            return false;
+        }
 
         LinkedHashSet<LabWork> lh = new LinkedHashSet<>();
 
         boolean flag = false;
 
         for (LabWork to : labWorks) {
-            if (to.getMinimalPoint() > labWork.getMinimalPoint()) {
+            if (to.getMinimalPoint() > labWork.getMinimalPoint() && db.getPersonIdById(to.getId()) == personId) {
                 lh.add(to);
             }
         }
@@ -109,30 +121,36 @@ public class LabWorkRepositoryImpl implements LabWorkRepository {
     }
 
     @Override
-    public LinkedHashSet<LabWork> getCollection() {
+    public Set<LabWork> getCollection() {
         return labWorks;
     }
 
     @Override
     public boolean updateById(LabWork labWork, int id, int personId) {
-//        db.updateById(id);
+        try {
+            db.updateById(labWork, id);
+        } catch (SQLException e) {
+            return false;
+        }
 
         LabWork lb = null;
         boolean flag = false;
 
         for (LabWork to : labWorks) {
-            if (to.getId() == id) {
+            if (to.getId() == id && db.getPersonIdById(to.getId()) == personId) {
                 flag = true;
                 lb = to;
                 break;
             }
         }
 
+        if (!flag) return false;
+
         labWorks.remove(lb);
         labWork.setId(id);
         labWorks.add(labWork);
 
-        return flag;
+        return true;
     }
 
     @Override

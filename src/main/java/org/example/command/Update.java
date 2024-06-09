@@ -39,7 +39,7 @@ public class Update extends Command {
             int id = Integer.parseInt(args[0]);
 
             if(!labWorkService.isExistById(id)){
-                return "Элемента с таким id не существует";
+                return "Элемента с таким id не существует или к нему нету доступа";
             }
 
             LabWork labWork = (LabWork) object;
@@ -49,7 +49,7 @@ public class Update extends Command {
             if (result) {
                 return "Объект успешно обновлённ";
             } else {
-                return "Элемента с таким id не существует";
+                return "Элемента с таким id не существует или к нему нету доступа";
             }
 
         } else {

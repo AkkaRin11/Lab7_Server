@@ -6,6 +6,7 @@ import org.example.repository.LabWorkRepository;
 import org.example.repository.LabWorkRepositoryImpl;
 
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 
 /**
@@ -49,7 +50,7 @@ public class LabWorkServiceImpl implements LabWorkService {
     }
 
     @Override
-    public LinkedHashSet<LabWork> getCollection() {
+    public Set<LabWork> getCollection() {
         return labWorkRepository.getCollection();
     }
 

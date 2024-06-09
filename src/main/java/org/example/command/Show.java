@@ -5,6 +5,7 @@ import org.example.service.LabWorkService;
 import org.example.service.LabWorkServiceImpl;
 
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  *
@@ -32,7 +33,7 @@ public class Show extends Command {
 
         String stringCollection = "";
 
-        LinkedHashSet<LabWork> collection = labWorkService.getCollection();
+        Set<LabWork> collection =  labWorkService.getCollection();
 
         if (collection.isEmpty()){
             return "Коллекция пуста";

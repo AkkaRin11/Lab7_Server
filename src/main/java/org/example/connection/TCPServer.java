@@ -18,6 +18,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TCPServer {
     private static final int BUFFER_SIZE = 4096;
@@ -32,10 +34,17 @@ public class TCPServer {
     private final CommandController commandController;
     private final LabWorkService labWorkService;
 
+    private final ExecutorService readThreadPool;
+    private final ExecutorService processThreadPool;
+
     public TCPServer() {
         buffer = ByteBuffer.allocate(BUFFER_SIZE);
         commandController = new CommandController();
         labWorkService = new LabWorkServiceImpl();
+
+        // Инициализируем Fixed Thread Pools
+        readThreadPool = Executors.newFixedThreadPool(10);
+        processThreadPool = Executors.newFixedThreadPool(10);
     }
 
     public void openConnection() throws IOException {
@@ -78,12 +87,23 @@ public class TCPServer {
             if (key.isAcceptable()) {
                 accept(key);
             } else if (key.isReadable()) {
-                read(key);
+                // Убираем ключ перед чтением
+                key.interestOps(0);
+                readThreadPool.execute(() -> {
+                    try {
+                        read(key);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
             } else if (key.isWritable()) {
+                // Убираем ключ перед записью
+                key.interestOps(0);
                 write(key);
             }
         }
     }
+
     private void accept(SelectionKey key) throws IOException {
         ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
         SocketChannel socketChannel = ssc.accept();
@@ -91,6 +111,7 @@ public class TCPServer {
         System.out.println("Подключенно: " + socketChannel.getRemoteAddress());
         socketChannel.register(selector, SelectionKey.OP_READ);
     }
+
     private void read(SelectionKey key) throws IOException {
         SocketChannel socketChannel = (SocketChannel) key.channel();
         buffer.clear();
@@ -111,17 +132,21 @@ public class TCPServer {
 
         CommandRequest request = Serializer.deserializeObject(buffer);
         request.setUserPass(HashUtils.encryptPass(request.getUserPass()));
+        processThreadPool.execute(() -> processRequest(key, request));
+    }
+
+    private void processRequest(SelectionKey key, CommandRequest request) {
         Response response;
         String commandResponse;
 
-        if (request.getCommandName().equals("registration")){
-            if (labWorkService.registration(request.getUserName(), request.getUserPass())){
+        if (request.getCommandName().equals("registration")) {
+            if (labWorkService.registration(request.getUserName(), request.getUserPass())) {
                 response = new Response(StatusCode._200_SUCCESS_, "Регистрация прошла успешно");
             } else {
                 response = new Response(StatusCode._500_SERVER_ERROR, "Аккаунт с таким именем уже существует");
             }
-        } else if (request.getCommandName().equals("log")){
-            if(labWorkService.log(request.getUserName(), request.getUserPass())){
+        } else if (request.getCommandName().equals("log")) {
+            if (labWorkService.log(request.getUserName(), request.getUserPass())) {
                 response = new Response(StatusCode._200_SUCCESS_, "Вы успешно зашли в аккаунт");
             } else {
                 response = new Response(StatusCode._500_SERVER_ERROR, "Ошибка в имени пользователя или пароле");
@@ -129,7 +154,7 @@ public class TCPServer {
         } else {
             int id = labWorkService.getPersonId(request.getUserName(), request.getUserPass());
 
-            if (id != -1){
+            if (id != -1) {
                 commandResponse = commandController.executeCommand(
                         request.getCommandName(),
                         request.getCommandObjectArgument(),
@@ -143,24 +168,41 @@ public class TCPServer {
             }
         }
 
-        socketChannel.register(this.selector, SelectionKey.OP_WRITE, response);
+        key.attach(response);
+        key.interestOps(SelectionKey.OP_WRITE);
+        selector.wakeup();
     }
+
     public void close() throws IOException {
         if (serverSocketChannel != null) {
             serverSocketChannel.close();
         }
+        readThreadPool.shutdown();
+        processThreadPool.shutdown();
     }
 
     private void write(SelectionKey key) throws IOException {
         SocketChannel socketChannel = (SocketChannel) key.channel();
         Response response = (Response) key.attachment();
 
-        ByteBuffer writeBuffer = Serializer.serializeObject(response);
-        writeBuffer.flip();
-        while (writeBuffer.hasRemaining()) {
-            socketChannel.write(writeBuffer);
-        }
-
-        socketChannel.register(selector, SelectionKey.OP_READ);
+        new Thread(() -> {
+            try {
+                ByteBuffer writeBuffer = Serializer.serializeObject(response);
+                writeBuffer.flip();
+                while (writeBuffer.hasRemaining()) {
+                    socketChannel.write(writeBuffer);
+                }
+                // Регистрация обратно в режим чтения
+                socketChannel.register(selector, SelectionKey.OP_READ);
+                selector.wakeup();
+            } catch (IOException e) {
+                e.printStackTrace();
+                try {
+                    socketChannel.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }).start();
     }
 }

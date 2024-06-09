@@ -40,7 +40,7 @@ public class RemoveById extends Command {
         if (flag) {
             return "Элемент был успешно удалён";
         } else {
-            return "Элемент не был удалён";
+            return "Элемент не был удалён, возможно его не существует или к нему нету доступа";
         }
     }
 

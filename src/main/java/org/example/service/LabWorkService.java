@@ -3,6 +3,7 @@ package org.example.service;
 import org.example.model.LabWork;
 
 import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  *
@@ -22,7 +23,7 @@ public interface LabWorkService {
 
     boolean save();
 
-    LinkedHashSet<LabWork> getCollection();
+    Set<LabWork> getCollection();
 
     boolean addIfMax(LabWork labWork, int personId);
 
