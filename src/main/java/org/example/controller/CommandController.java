@@ -34,6 +34,7 @@ public class CommandController {
         commands.put("show", new Show());
         commands.put("sum_of_average_point", new SumOfAveragePoint());
         commands.put("update", new Update());
+        commands.put("logout", new Logout());
     }
 
 

@@ -1,7 +1,6 @@
 package org.example.repository;
 
 import org.example.model.*;
-import org.example.utils.Data;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -245,11 +244,14 @@ public class DB {
     public int getPersonIdById(int id) {
         try {
             PreparedStatement ps = connection.prepareStatement("SELECT prog_user_id FROM lab_work WHERE id = ?");
-            connection.setAutoCommit(false);
             ps.setInt(1, id);
-
             ResultSet resultSet = ps.executeQuery();
-            return resultSet.getInt("prog_user_id");
+
+            if (resultSet.next()) {
+                return resultSet.getInt(1);
+            }
+
+            return 0;
         } catch (SQLException sqlException){
             return 0;
         }

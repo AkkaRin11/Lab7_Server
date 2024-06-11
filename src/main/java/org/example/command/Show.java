@@ -40,7 +40,7 @@ public class Show extends Command {
         }
 
         for (LabWork labWork: collection){
-            stringCollection += labWork;
+            stringCollection += "\nPersonId: " + labWorkService.getPersonIdById(labWork.getId()) + "\n" +labWork;
         }
 
         return stringCollection;

@@ -151,6 +151,15 @@ public class TCPServer {
             } else {
                 response = new Response(StatusCode._500_SERVER_ERROR, "Ошибка в имени пользователя или пароле");
             }
+        } else if (request.getCommandName().equals("check_id")){
+            int personId = labWorkService.getPersonId(request.getUserName(), request.getUserPass());
+            int id = Integer.parseInt(request.getCommandStringArgument()[1]);
+
+            if(labWorkService.isExistById(id) && labWorkService.getPersonIdById(id) == personId) {
+                response = new Response(StatusCode._200_SUCCESS_, "");
+            } else {
+                response = new Response(StatusCode._500_SERVER_ERROR, "");
+            }
         } else {
             int id = labWorkService.getPersonId(request.getUserName(), request.getUserPass());
 

@@ -25,7 +25,7 @@ public class LabWork implements Serializable {
 
     @Override
     public String toString() {
-        return "\n" + "Id: " + getId().toString() +
+        return "Id: " + getId().toString() +
                 "\n" + "Name: " + getName()+
                 "\n" + "Coordinates X: " + getCoordinates().getX().toString()+
                 "\n" + "Coordinates Y: " + getCoordinates().getY().toString()+

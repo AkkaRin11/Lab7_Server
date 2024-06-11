@@ -143,4 +143,9 @@ public class LabWorkServiceImpl implements LabWorkService {
     public boolean log(String name, String pass) {
         return db.log(name, pass);
     }
+
+    @Override
+    public int getPersonIdById(int id) {
+        return db.getPersonIdById(id);
+    }
 }

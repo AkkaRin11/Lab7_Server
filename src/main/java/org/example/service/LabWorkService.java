@@ -44,4 +44,6 @@ public interface LabWorkService {
     boolean registration(String name, String pass);
 
     boolean log(String name, String pass);
+
+    int getPersonIdById(int id);
 }
